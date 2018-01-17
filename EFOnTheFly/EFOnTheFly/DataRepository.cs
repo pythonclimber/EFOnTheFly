@@ -1,52 +1,53 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.ModelConfiguration;
 using System.Linq;
 
 namespace EFOnTheFly {
-    public interface IDataRepository<T> {
-        T Get(params object[] keys);
+    public interface IDataRepository<TEntity> where TEntity : class {
+        TEntity Get(params object[] keys);
 
-        List<T> Get(Func<T, bool> getFunction);
+        List<TEntity> Get(Func<TEntity, bool> getFunction);
 
-        List<T> GetByStoredProc(string storedProc, params object[] parameters);
+        List<TEntity> GetByStoredProc(string storedProc, params object[] parameters);
 
-        T Add(T entity);
+        TEntity Add(TEntity entity);
 
-        T Update(T entity);
+        TEntity Update(TEntity entity);
 
-        T Delete(T entity);
+        TEntity Delete(TEntity entity);
     }
 
-    public class DataRepository<T> : IDataRepository<T> where T : class {
-        public T Get(params object[] keys) {
-            T entity;
+    public class DataRepository<TEntity> : IDataRepository<TEntity> where TEntity : class {
+        public TEntity Get(params object[] keys) {
+            TEntity entity;
 
-            using (var context = new DataContext<T>()) {
+            using (var context = new DataContext<TEntity>()) {
                 entity = context.Entities.Find(keys);
             }
 
             return entity;
         }
 
-        public List<T> Get(Func<T, bool> getFunction) {
-            List<T> entities;
+        public List<TEntity> Get(Func<TEntity, bool> getFunction) {
+            List<TEntity> entities;
 
-            using (var context = new DataContext<T>()) {
+            using (var context = new DataContext<TEntity>()) {
                 entities = context.Entities.AsNoTracking().Where(getFunction).ToList();
             }
 
             return entities;
         }
 
-        public List<T> GetByStoredProc(string storedProc, params object[] parameters) {
-            using (var context = new DataContext<T>()) {
-                return context.Database.SqlQuery<T>(storedProc, parameters).ToList();
+        public List<TEntity> GetByStoredProc(string storedProc, params object[] parameters) {
+            using (var context = new DataContext<TEntity>()) {
+                return context.Database.SqlQuery<TEntity>(storedProc, parameters).ToList();
             }
         }
 
-        public T Add(T entity) {
-            using (var context = new DataContext<T>()) {
+        public TEntity Add(TEntity entity) {
+            using (var context = new DataContext<TEntity>()) {
                 context.Entities.Add(entity);
                 context.SaveChanges();
             }
@@ -54,8 +55,8 @@ namespace EFOnTheFly {
             return entity;
         }
 
-        public T Update(T entity) {
-            using (var context = new DataContext<T>()) {
+        public TEntity Update(TEntity entity) {
+            using (var context = new DataContext<TEntity>()) {
                 context.Entities.Attach(entity);
                 context.Entry(entity).State = EntityState.Modified;
                 context.SaveChanges();
@@ -64,13 +65,20 @@ namespace EFOnTheFly {
             return entity;
         }
 
-        public T Delete(T entity) {
-            using (var context = new DataContext<T>()) {
+        public TEntity Delete(TEntity entity) {
+            using (var context = new DataContext<TEntity>()) {
                 context.Entities.Remove(entity);
                 context.SaveChanges();
             }
 
             return entity;
         }
+
+        protected virtual DbContext GetContext() {
+            return new DataContext<TEntity>();
+        }
     }
+
+    public class ConfigurableDataRepository<TEntity, TEntityConfig> : DataRepository<TEntity> where TEntity : class
+        where TEntityConfig : EntityTypeConfiguration<TEntity> { }
 }
