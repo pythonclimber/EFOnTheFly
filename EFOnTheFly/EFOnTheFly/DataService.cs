@@ -5,7 +5,7 @@ using System.Data.Entity.ModelConfiguration;
 using System.Linq;
 
 namespace EFOnTheFly {
-    public interface IDataRepository<TEntity> where TEntity : class {
+    public interface IDataService<TEntity> where TEntity : class {
         TEntity Get(params object[] keys);
 
         List<TEntity> Get(Func<TEntity, bool> getFunction);
@@ -19,7 +19,7 @@ namespace EFOnTheFly {
         TEntity Delete(TEntity entity);
     }
 
-    public class DataRepository<TEntity> : IDataRepository<TEntity> where TEntity : class {
+    public class DataService<TEntity> : IDataService<TEntity> where TEntity : class {
         public TEntity Get(params object[] keys) {
             TEntity entity;
 
@@ -79,6 +79,10 @@ namespace EFOnTheFly {
         }
     }
 
-    public class ConfigurableDataRepository<TEntity, TEntityConfig> : DataRepository<TEntity> where TEntity : class
-        where TEntityConfig : EntityTypeConfiguration<TEntity> { }
+    public class ConfigurableDataService<TEntity, TEntityConfig> : DataService<TEntity> where TEntity : class
+        where TEntityConfig : EntityTypeConfiguration<TEntity>, new() {
+        protected override DbContext GetContext() {
+            return new DataContext<TEntity>(new TEntityConfig());
+        }
+    }
 }
