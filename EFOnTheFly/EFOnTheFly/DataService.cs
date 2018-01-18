@@ -20,11 +20,17 @@ namespace EFOnTheFly {
     }
 
     public class DataService<TEntity> : IDataService<TEntity> where TEntity : class {
+        protected readonly string NameOrConnectionString;
+
+        public DataService(string nameOrConnectionString) {
+            NameOrConnectionString = nameOrConnectionString;
+        }
+
         public TEntity Get(params object[] keys) {
             TEntity entity;
 
-            using (var context = new DataContext<TEntity>()) {
-                entity = context.Entities.Find(keys);
+            using (var context = GetContext()) {
+                entity = context.Set<TEntity>().Find(keys);
             }
 
             return entity;
@@ -33,22 +39,22 @@ namespace EFOnTheFly {
         public List<TEntity> Get(Func<TEntity, bool> getFunction) {
             List<TEntity> entities;
 
-            using (var context = new DataContext<TEntity>()) {
-                entities = context.Entities.AsNoTracking().Where(getFunction).ToList();
+            using (var context = GetContext()) {
+                entities = context.Set<TEntity>().AsNoTracking().Where(getFunction).ToList();
             }
 
             return entities;
         }
 
         public List<TEntity> GetByStoredProc(string storedProc, params object[] parameters) {
-            using (var context = new DataContext<TEntity>()) {
+            using (var context = GetContext()) {
                 return context.Database.SqlQuery<TEntity>(storedProc, parameters).ToList();
             }
         }
 
         public TEntity Add(TEntity entity) {
-            using (var context = new DataContext<TEntity>()) {
-                context.Entities.Add(entity);
+            using (var context = GetContext()) {
+                context.Set<TEntity>().Add(entity);
                 context.SaveChanges();
             }
 
@@ -56,8 +62,8 @@ namespace EFOnTheFly {
         }
 
         public TEntity Update(TEntity entity) {
-            using (var context = new DataContext<TEntity>()) {
-                context.Entities.Attach(entity);
+            using (var context = GetContext()) {
+                context.Set<TEntity>().Attach(entity);
                 context.Entry(entity).State = EntityState.Modified;
                 context.SaveChanges();
             }
@@ -66,8 +72,8 @@ namespace EFOnTheFly {
         }
 
         public TEntity Delete(TEntity entity) {
-            using (var context = new DataContext<TEntity>()) {
-                context.Entities.Remove(entity);
+            using (var context = GetContext()) {
+                context.Set<TEntity>().Remove(entity);
                 context.SaveChanges();
             }
 
@@ -75,14 +81,16 @@ namespace EFOnTheFly {
         }
 
         protected virtual DbContext GetContext() {
-            return new DataContext<TEntity>();
+            return new DataContext<TEntity>(NameOrConnectionString);
         }
     }
 
     public class ConfigurableDataService<TEntity, TEntityConfig> : DataService<TEntity> where TEntity : class
         where TEntityConfig : EntityTypeConfiguration<TEntity>, new() {
+        public ConfigurableDataService(string nameOrConnectionString) : base(nameOrConnectionString) {
+        }
         protected override DbContext GetContext() {
-            return new DataContext<TEntity>(new TEntityConfig());
+            return new DataContext<TEntity>(NameOrConnectionString, new TEntityConfig());
         }
     }
 }

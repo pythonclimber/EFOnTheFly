@@ -2,20 +2,23 @@
 using System.Data.Entity.ModelConfiguration;
 
 namespace EFOnTheFly {
+
     internal class DataContext<TEntity> : DbContext where TEntity : class {
         private readonly EntityTypeConfiguration<TEntity> _entityTypeConfiguration;
         public DbSet<TEntity> Entities { get; set; }
 
-        public DataContext() { }
+        public DataContext(string nameOrConnectionString) : this(nameOrConnectionString, null) { }
 
-        public DataContext(EntityTypeConfiguration<TEntity> entityTypeConfiguration) {
+        public DataContext(string nameOrConnectionString, EntityTypeConfiguration<TEntity> entityTypeConfiguration) : base(nameOrConnectionString) {
             _entityTypeConfiguration = entityTypeConfiguration;
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Configurations.Add(_entityTypeConfiguration);
+            if (_entityTypeConfiguration != null) {
+                modelBuilder.Configurations.Add(_entityTypeConfiguration);
+            }
         }
     }
 }
