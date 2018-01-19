@@ -17,6 +17,8 @@ namespace EFOnTheFly {
         TEntity Update(TEntity entity);
 
         TEntity Delete(TEntity entity);
+
+        int ExecuteStoredProc(string storedProc, params object[] parameters);
     }
 
     public class DataService<TEntity> : IDataService<TEntity> where TEntity : class {
@@ -78,6 +80,12 @@ namespace EFOnTheFly {
             }
 
             return entity;
+        }
+
+        public int ExecuteStoredProc(string storedProc, params object[] parameters) {
+            using (var context = GetContext()) {
+                return context.Database.ExecuteSqlCommand(storedProc, parameters);
+            }
         }
 
         protected virtual DbContext GetContext() {
