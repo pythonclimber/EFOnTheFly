@@ -10,6 +10,8 @@ namespace EFOnTheFly {
 
         List<TEntity> Get(Func<TEntity, bool> getFunction);
 
+        List<TEntity> GetAll();
+
         List<TEntity> GetByStoredProc(string storedProc, params object[] parameters);
 
         TEntity Add(TEntity entity);
@@ -43,6 +45,18 @@ namespace EFOnTheFly {
 
             using (var context = GetContext()) {
                 entities = context.Set<TEntity>().AsNoTracking().Where(getFunction).ToList();
+            }
+
+            return entities;
+        }
+
+        public List<TEntity> GetAll()
+        {
+            List<TEntity> entities;
+
+            using (var context = GetContext())
+            {
+                entities = context.Set<TEntity>().AsNoTracking().ToList();
             }
 
             return entities;
